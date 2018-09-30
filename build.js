@@ -4,83 +4,93 @@ const fs = require('fs-extra')
 const ProductionLine = require('productionline-web')
 const TaskRunner = require('shortbus')
 
-const Postcss = require('postcss')
 const Chassis = require('@chassis/core')
 const CleanCss = require('clean-css')
 
-class Builder extends ProductionLine {
+class CustomProductionLine extends ProductionLine {
   constructor (cfg) {
     super(cfg)
-
-    this.chassis = Postcss([
-      Chassis({
-        importBasePath: path.resolve(`${this.SOURCE}/css`),
-        theme: path.resolve(`${this.SOURCE}/main.theme`),
-        layout: {
-          minWidth: 320,
-          maxWidth: 1200
-        }
-      })
-    ])
   }
 
-  buildCSS (minify = true) {
-    this.addTask('Build CSS', next => {
-      let tasks = new TaskRunner()
+  buildCSS (minify = true, cb) {
+    let tasks = new TaskRunner()
 
-      this.walk(path.join(this.SOURCE, '/**/*.css')).forEach(filepath => {
-        let filename = /[^/]*$/.exec(filepath)[0]
+    let cfg = {
+      minify,
+      sourceMap: minify,
+      importBasePath: path.resolve(`${this.SOURCE}/css`),
+      theme: path.resolve(`${this.SOURCE}/css/main.theme`)
+    }
 
-        if (filename.startsWith('_')) {
-          return
+    let chassis = new Chassis()
+
+    this.walk(this.paths.css).forEach(filepath => {
+      tasks.add(`Process ${this.localDirectory(filepath)}`, next => {
+        let input = this.readFileSync(filepath)
+
+        let output = {
+          filename: this.outputDirectory(filepath),
+          css: null,
+          sourceMap: null
         }
 
-        tasks.add(`Process ${this.localDirectory(filepath)}`, cont => {
-          let css = this.readFileSync(filepath)
+        if (cfg.sourceMap) {
+          cfg.sourceMapPath = path.dirname(output.filename)
+        }
 
-          this.chassis.process(css, {from: void 0}).then(res => {
-            let outputPath = this.outputDirectory(filepath)
+        chassis.cfg = cfg
 
-            if (!minify) {
-              this.writeFile(outputPath, res.css, cont)
-              return
-            }
+        chassis.process(input, (err, processed) => {
+          if (err) {
+            throw err
+          }
 
-            let minified = new CleanCss({
-              sourceMap: true
-            }).minify(res.css)
+          if (processed.sourceMap) {
+            this.writeFileSync(`${output.filename}.map`, processed.sourceMap)
+          }
 
-            if (minified.sourceMap) {
-              this.writeFileSync(`${outputPath}.map`, minified.sourceMap)
-            }
-
-            // this.writeFile(outputPath, this.applyHeader(minified.styles, 'css'), cont)
-            // TODO: Check this.applyHeader (its returning undefined)
-            this.writeFile(outputPath, minified.styles, cont)
-          }).catch(err => this.failure(err))
-        })
+          this.writeFile(output.filename, processed.css, next)
+        }, filepath)
       })
-
-      tasks.on('complete', next)
-      tasks.run()
     })
+
+    tasks.on('complete', cb)
+    tasks.run()
   }
 
-  make () {
+  make (dev = false) {
     this.clean()
     this.copyAssets()
     this.buildHTML()
     this.buildJavaScript()
-    this.buildCSS()
+    this.addTask('Build CSS', next => this.buildCSS(dev, next))
   }
 }
 
-const builder = new Builder({
+const builder = new CustomProductionLine({
+  header: `Copyright (c) ${new Date().getFullYear()} Ecor Ventures LLC.\nVersion ${this.version} built on ${new Date().toString()}`,
+
   commands: {
     '--build' (cmd) {
-      this.make()
+      builder.make()
+    },
+
+    '--build-dev' (cmd) {
+      builder.make(true)
+
+      builder.watch((action, filepath) => {
+        if (action === 'create' || action === 'update') {
+          builder.make(true)
+          builder.run()
+        }
+      })
     }
   }
 })
+
+builder.assets = path.resolve('./src/assets')
+builder.paths = {
+  css: path.join(builder.SOURCE, '/**/*.css')
+}
 
 builder.run()
