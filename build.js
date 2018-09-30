@@ -19,7 +19,12 @@ class CustomProductionLine extends ProductionLine {
       minify,
       sourceMap: minify,
       importBasePath: path.resolve(`${this.SOURCE}/css`),
-      theme: path.resolve(`${this.SOURCE}/css/main.theme`)
+      theme: path.resolve(`${this.SOURCE}/css/main.theme`),
+
+      layout: {
+        minWidth: 320,
+        maxWidth: 1920
+      }
     }
 
     let chassis = new Chassis()
@@ -63,7 +68,7 @@ class CustomProductionLine extends ProductionLine {
     this.copyAssets()
     this.buildHTML()
     this.buildJavaScript()
-    this.addTask('Build CSS', next => this.buildCSS(dev, next))
+    this.addTask('Build CSS', next => this.buildCSS(!dev, next))
   }
 }
 
