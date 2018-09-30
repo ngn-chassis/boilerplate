@@ -1,6 +1,8 @@
 # Chassis Boilerplate
 Includes starter HTML and CSS files and a productionLine-web build process.
 
+---
+
 For production builds, run:
 ```sh
 npm run build
