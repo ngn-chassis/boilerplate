@@ -3,9 +3,7 @@ const fs = require('fs-extra')
 
 const ProductionLine = require('productionline-web')
 const TaskRunner = require('shortbus')
-
 const Chassis = require('@chassis/core')
-const CleanCss = require('clean-css')
 
 class CustomProductionLine extends ProductionLine {
   constructor (cfg) {
@@ -15,47 +13,27 @@ class CustomProductionLine extends ProductionLine {
   buildCSS (minify = true, cb) {
     let tasks = new TaskRunner()
 
-    let cfg = {
-      minify,
-      sourceMap: minify,
-      importBasePath: path.resolve(`${this.SOURCE}/css`),
-      theme: path.resolve(`${this.SOURCE}/css/main.theme`),
-
-      layout: {
-        minWidth: 320,
-        maxWidth: 1920
-      }
-    }
-
-    let chassis = new Chassis()
-
     this.walk(this.paths.css).forEach(filepath => {
       tasks.add(`Process ${this.localDirectory(filepath)}`, next => {
-        let input = this.readFileSync(filepath)
+        let chassis = new Chassis({
+          minify,
+          sourceMap: minify,
+          sourceMapPath: path.dirname(this.outputDirectory(filepath)),
+          importBasePath: path.resolve(`${this.SOURCE}/css`),
+          theme: path.resolve(`${this.SOURCE}/css/main.theme`)
+        })
 
-        let output = {
-          filename: this.outputDirectory(filepath),
-          css: null,
-          sourceMap: null
-        }
-
-        if (cfg.sourceMap) {
-          cfg.sourceMapPath = path.dirname(output.filename)
-        }
-
-        chassis.cfg = cfg
-
-        chassis.process(input, (err, processed) => {
+        chassis.process(filepath, (err, processed) => {
           if (err) {
             throw err
           }
 
           if (processed.sourceMap) {
-            this.writeFileSync(`${output.filename}.map`, processed.sourceMap)
+            this.writeFileSync(`${this.outputDirectory(filepath)}.map`, processed.sourceMap)
           }
 
-          this.writeFile(output.filename, processed.css, next)
-        }, filepath)
+          this.writeFile(this.outputDirectory(filepath), processed.css, next)
+        })
       })
     })
 
@@ -76,11 +54,11 @@ const builder = new CustomProductionLine({
   header: `Copyright (c) ${new Date().getFullYear()} Ecor Ventures LLC.\nVersion ${this.version} built on ${new Date().toString()}`,
 
   commands: {
-    '--build' (cmd) {
+    '--prod' (cmd) {
       builder.make()
     },
 
-    '--build-dev' (cmd) {
+    '--dev' (cmd) {
       builder.make(true)
 
       builder.watch((action, filepath) => {

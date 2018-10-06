@@ -2,19 +2,19 @@
 Includes starter HTML and CSS files and a productionLine-web build process.
 
 ---
-
-To build for production, run:
+To build for development, run:
 ```sh
 npm run build
 ```
 
+
+For production, run:
+```sh
+npm run build-prod
+```
+
 This will minify css and generate source maps.
 
-
-For development, run:
-```sh
-npm run buildDev
-```
 
 ---
 
