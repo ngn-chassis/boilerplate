@@ -2,7 +2,6 @@ const path = require('path')
 const fs = require('fs-extra')
 
 const ProductionLine = require('productionline-web')
-const TaskRunner = require('shortbus')
 const Chassis = require('@chassis/core')
 
 class CustomProductionLine extends ProductionLine {
@@ -11,7 +10,7 @@ class CustomProductionLine extends ProductionLine {
   }
 
   buildCSS (minify = true, cb) {
-    let tasks = new TaskRunner()
+    let tasks = new this.TaskRunner()
 
     this.walk(this.paths.css).forEach(filepath => {
       tasks.add(`Process ${this.localDirectory(filepath)}`, next => {
