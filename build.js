@@ -18,7 +18,6 @@ class CustomProductionLine extends ProductionLine {
           minify,
           sourceMap: minify,
           sourceMapPath: path.dirname(this.outputDirectory(filepath)),
-          importBasePath: path.resolve(`${this.SOURCE}/css`),
           theme: path.resolve(`${this.SOURCE}/css/main.theme`)
         })
 

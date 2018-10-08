@@ -11,7 +11,7 @@
   "author": "",
   "license": "BSD-3-Clause",
   "devDependencies": {
-    "@chassis/core": "2.2.0",
+    "@chassis/core": "2.2.1",
     "fs-extra": "7.0.0",
     "productionline-web": "1.1.8"
   }
