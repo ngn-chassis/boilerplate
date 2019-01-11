@@ -5,13 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "node build.js --dev",
-    "build-prod": "node build.js --prod"
+    "build-dev": "node build.js --dev",
+    "build": "node build.js --prod"
   },
   "author": "",
   "license": "BSD-3-Clause",
   "devDependencies": {
-    "@chassis/core": "2.2.2",
+    "@chassis/core": "2.2.4",
     "fs-extra": "7.0.0",
     "productionline-web": "1.1.8"
   }
